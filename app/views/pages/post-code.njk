@@ -1,0 +1,40 @@
+{% extends "layouts/journey.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "casa/components/input/macro.njk" import casaGovukInput with context %}
+
+{% block journey_form %}
+  <div class="govuk-width-container">
+    <h1 class="govuk-heading-l">Find an address</h1>
+    <p class="govuk-body govuk-!-margin-bottom-0">
+      <a href="/sub/manual-address" class="govuk-link">Enter address manually</a>
+    </p>
+
+    {{ govukButton({
+      text: "Find address"
+    }) }}
+
+    {{ casaGovukInput({
+      label: {
+        text: "Building number or name"
+      },
+      classes: "govuk-!-width-two-thirds",
+      hint: {
+        text: "For example, 15 or Prospect Cottage."
+      }, 
+      value: formData.searchString,
+      name: "searchString"
+    }) }}
+
+    {{ casaGovukInput({
+      label: {
+        text: "Postcode"
+      },
+      classes: "govuk-!-width-two-thirds",
+      hint: {
+        text: "For example, AA3 1AB."
+      },
+      value: formData.postcode,
+      name: "postcode"
+    }) }}
+  </div>
+{% endblock %}

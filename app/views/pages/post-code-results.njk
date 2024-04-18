@@ -1,0 +1,61 @@
+{% extends "layouts/journey.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/fieldset/macro.njk" import govukFieldset %}
+{% from "casa/components/radios/macro.njk" import casaGovukRadios with context %}
+
+{% block journey_form %}
+
+  <div class="govuk-grid-row">
+    <div class="govuk-grid-column-two-thirds">
+      <div class="govuk-width-container">
+
+        <div class="govuk-form-group">
+          {% call govukFieldset({
+            legend: {
+              html: legendHtml,
+              classes: "govuk-fieldset__legend--l"
+            }
+          }) %}
+          {% endcall %}
+          {{ casaGovukRadios({
+              classes: "govuk-radios--inline",
+              casaValue: formData.address,
+              casaErrors: formErrors,
+              name: "address",
+              items: [
+                {
+                  value: "1 Washington Street, Worcester, WR1 1NL",
+                  text: "1 Washington Street, Worcester, WR1 1NL"
+                },
+                {
+                  value: "10 Washington Street, Worcester, WR1 1NL",
+                  text: "10 Washington Street, Worcester, WR1 1NL"
+                },
+                {
+                  value: "11 Washington Street, Worcester, WR1 1NL",
+                  text: "11 Washington Street, Worcester, WR1 1NL"
+                },
+                {
+                  value: "101 Washington Street, Worcester, WR1 1NL",
+                  text: "101 Washington Street, Worcester, WR1 1NL"
+                },
+                {
+                value: "110 Washington Street, Worcester, WR1 1NL",
+                text: "110 Washington Street, Worcester, WR1 1NL"
+                },
+                {
+                value: "111 Washington Street, Worcester, WR1 1NL",
+                text: "111 Washington Street, Worcester, WR1 1NL"
+                }
+              ]
+            }) }}
+        </div>
+        <p> and . 6 addresses found for <a href="#">Search again</a>
+          <b>wr11nl</b>
+          <b>1</b>
+        </p>
+      </div>
+    </div>
+  </div>
+
+{% endblock %}

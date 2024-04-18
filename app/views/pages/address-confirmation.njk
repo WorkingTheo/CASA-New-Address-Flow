@@ -1,0 +1,20 @@
+{% extends "layouts/journey.njk" %}
+{% from "govuk/components/button/macro.njk" import govukButton %}
+{% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
+
+{% block journey_form %}
+  <div class="govuk-width-container">
+    <h1 class="govuk-heading-l">Confirm address</h1>
+    <p>6 addresses found for <b>wr11nl</b> and <b>1</b>. <a href="#">Search again</a></p>
+
+    <h2>{{ formData }}</h2>
+
+    {{ govukInsetText({
+      html: formData.address
+    }) }}
+
+    <p class="govuk-body"><a href="/post-code" class="govuk-link">Use a different address</a></p>
+    <p class="govuk-body"><a href="/address-manual" class="govuk-link">Enter address manually</a></p>
+    
+  </div> 
+{% endblock %}
