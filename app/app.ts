@@ -23,11 +23,7 @@ const addressApp = (
 
   const plan = new Plan();
 
-  plan.addSkippables('post-code', 'post-code-results', 'address-confirmation', 'address-manual');
-
-  plan.addSequence('post-code', 'post-code-results', 'address-confirmation', 'url:///start/');
-
-  plan.addSequence('address-manual', 'address-confirmation', 'url:///start/');
+  plan.addSequence('post-code', 'post-code-results', 'url:///address-confirmation/');
 
   const { mount, ancillaryRouter } = configure({
     views: [viewDir],
@@ -53,27 +49,6 @@ const addressApp = (
         view: 'pages/post-code-results.njk',
         fields: postCodeResultsFields,
       },
-      {
-        waypoint: 'address-confirmation',
-        view: 'pages/address-confirmation.njk',
-        fields: addressConfirmationFields,
-        hooks: [{
-          hook: 'prerender',
-          middleware: (req, res, next) => {
-            console.log('RAN MIDDLEWARE (address-confirmation)');
-            const journeyContext = JourneyContext.getDefaultContext(req.session);
-            const data = journeyContext.getDataForPage('post-code-results') as { address: string };
-            journeyContext.setDataForPage('address-confirmation', data);
-            console.log(`previous url was: ${req.session.previousUrl}`);
-            next();
-          },
-        }],
-      },
-      {
-        waypoint: 'address-manual',
-        view: 'pages/address-manual.njk',
-        fields: addressManualFields,
-      }
     ],
     hooks: [
       {
@@ -91,6 +66,37 @@ const addressApp = (
   ancillaryRouter.use('/start', (req: Request, res: Response) => {
     res.render('pages/start.njk');
   });
+
+  ancillaryRouter.use('/address-confirmation', (req: Request, res: Response) => {
+    const journeyContext = JourneyContext.getDefaultContext(req.session);
+    if(req.session.previousUrl === '/post-code-results') {
+      console.log('previous page was post-code-results');
+      const address = (journeyContext.getDataForPage('post-code-results') as { address: string }).address;
+      console.log(address);
+      res.locals.address = address;
+    } else {
+      console.log('previous page was address-manual');
+      const address = (journeyContext.getDataForPage('address-manual') as { address: string }).address;
+      console.log(address);
+      res.locals.address = address;
+    }
+    res.render('pages/address-confirmation.njk');
+  });
+
+  ancillaryRouter.use('/address-manual', (req: Request, res: Response) => {
+    if(req.method === 'GET') {
+      res.render('pages/address-manual.njk');
+      return;
+    }
+
+    if(req.method === 'POST') {
+      console.log(req.body);
+      req.session.previousUrl = '/address-manual';
+      const journeyContext = JourneyContext.getDefaultContext(req.session);
+      journeyContext.setDataForPage('address-manual', { address: req.body.address });
+      res.redirect('/address-confirmation');
+    }
+  })
 
   return mount(casaApp, {});
 }

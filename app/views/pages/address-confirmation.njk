@@ -10,8 +10,10 @@
     <h2>{{ formData }}</h2>
 
     {{ govukInsetText({
-      html: formData.address
+      html: address
     }) }}
+
+    <a href="/start">Go to start</a>
 
     <p class="govuk-body"><a href="/post-code" class="govuk-link">Use a different address</a></p>
     <p class="govuk-body"><a href="/address-manual" class="govuk-link">Enter address manually</a></p>
