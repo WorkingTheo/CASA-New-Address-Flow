@@ -23,7 +23,17 @@ const addressApp = (
 
   const plan = new Plan();
 
-  plan.addSequence('post-code', 'post-code-results', 'url:///address-confirmation/');
+  plan.addSequence('question', 'post-code');
+
+  plan.addSkippables('post-code', 'post-code-results', 'address-manual', 'address-confirmation', 'url:///start/');
+
+  plan.setRoute('post-code', 'address-manual', (r, c) => c.data['post-code']?.__skipped__);
+  plan.setRoute('post-code', 'post-code-results', (r, c) => !c.data['post-code']?.__skipped__);
+
+  plan.setRoute('post-code-results', 'address-manual', (r, c) => c.data['post-code-results']?.__skipped__);
+  plan.setRoute('post-code-results', 'address-confirmation', (r, c) => !c.data['post-code-results']?.__skipped__);
+
+  plan.setRoute('address-manual', 'address-confirmation');
 
   const { mount, ancillaryRouter } = configure({
     views: [viewDir],
@@ -40,6 +50,10 @@ const addressApp = (
     },
     pages: [
       {
+        waypoint: 'question',
+        view: 'pages/question.njk'
+      },
+      {
         waypoint: 'post-code',
         view: 'pages/post-code.njk',
         fields: postCodeFields
@@ -49,17 +63,25 @@ const addressApp = (
         view: 'pages/post-code-results.njk',
         fields: postCodeResultsFields,
       },
-    ],
-    hooks: [
       {
-        hook: "journey.preredirect",
-        middleware: (req: Request, res, next) => {
-          req.session.previousUrl = req.originalUrl;
-          console.log(req.originalUrl);
-          next();
-        },
-      },  
+        waypoint: 'address-confirmation',
+        view: 'pages/address-confirmation.njk'
+      },
+      {
+        waypoint: 'address-manual',
+        view: 'pages/address-manual.njk'
+      }
     ],
+    // hooks: [
+    //   {
+    //     hook: "journey.preredirect",
+    //     middleware: (req: Request, res, next) => {
+    //       req.session.previousUrl = req.originalUrl;
+    //       console.log(req.originalUrl);
+    //       next();
+    //     },
+    //   },
+    // ],
     plan
   });
 
@@ -67,36 +89,36 @@ const addressApp = (
     res.render('pages/start.njk');
   });
 
-  ancillaryRouter.use('/address-confirmation', (req: Request, res: Response) => {
-    const journeyContext = JourneyContext.getDefaultContext(req.session);
-    if(req.session.previousUrl === '/post-code-results') {
-      console.log('previous page was post-code-results');
-      const address = (journeyContext.getDataForPage('post-code-results') as { address: string }).address;
-      console.log(address);
-      res.locals.address = address;
-    } else {
-      console.log('previous page was address-manual');
-      const address = (journeyContext.getDataForPage('address-manual') as { address: string }).address;
-      console.log(address);
-      res.locals.address = address;
-    }
-    res.render('pages/address-confirmation.njk');
-  });
+  // ancillaryRouter.use('/address-confirmation', (req: Request, res: Response) => {
+  //   const journeyContext = JourneyContext.getDefaultContext(req.session);
+  //   if (req.session.previousUrl === '/post-code-results') {
+  //     console.log('previous page was post-code-results');
+  //     const address = (journeyContext.getDataForPage('post-code-results') as { address: string }).address;
+  //     console.log(address);
+  //     res.locals.address = address;
+  //   } else {
+  //     console.log('previous page was address-manual');
+  //     const address = (journeyContext.getDataForPage('address-manual') as { address: string }).address;
+  //     console.log(address);
+  //     res.locals.address = address;
+  //   }
+  //   res.render('pages/address-confirmation.njk');
+  // });
 
-  ancillaryRouter.use('/address-manual', (req: Request, res: Response) => {
-    if(req.method === 'GET') {
-      res.render('pages/address-manual.njk');
-      return;
-    }
+  // ancillaryRouter.use('/address-manual', (req: Request, res: Response) => {
+  //   if (req.method === 'GET') {
+  //     res.render('pages/address-manual.njk');
+  //     return;
+  //   }
 
-    if(req.method === 'POST') {
-      console.log(req.body);
-      req.session.previousUrl = '/address-manual';
-      const journeyContext = JourneyContext.getDefaultContext(req.session);
-      journeyContext.setDataForPage('address-manual', { address: req.body.address });
-      res.redirect('/address-confirmation');
-    }
-  })
+  //   if (req.method === 'POST') {
+  //     console.log(req.body);
+  //     req.session.previousUrl = '/address-manual';
+  //     const journeyContext = JourneyContext.getDefaultContext(req.session);
+  //     journeyContext.setDataForPage('address-manual', { address: req.body.address });
+  //     res.redirect('/address-confirmation');
+  //   }
+  // })
 
   return mount(casaApp, {});
 }

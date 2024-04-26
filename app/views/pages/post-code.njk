@@ -36,5 +36,9 @@
       value: formData.postcode,
       name: "postcode"
     }) }}
+
+    <a href='{{ waypointUrl({ waypoint: casa.waypoint, skipTo: "address-manual" }) }}'>
+      Manual 
+    </a>
   </div>
 {% endblock %}
