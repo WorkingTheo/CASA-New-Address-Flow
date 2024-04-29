@@ -10,13 +10,17 @@
     <h2>{{ formData }}</h2>
 
     {{ govukInsetText({
-      html: address
+      text: formData.address
     }) }}
 
     <a href="/start">Go to start</a>
 
-    <p class="govuk-body"><a href="/post-code" class="govuk-link">Use a different address</a></p>
-    <p class="govuk-body"><a href="/address-manual" class="govuk-link">Enter address manually</a></p>
+    <a href='{{ waypointUrl({ waypoint: casa.waypoint, skipTo: "post-code" }) }}' class="govuk-link">
+      Use a different address 
+    </a>
+    <a href='{{ waypointUrl({ waypoint: casa.waypoint, skipTo: "address-manual" }) }}' class="govuk-link">
+      Manual 
+    </a>
     
   </div> 
 {% endblock %}

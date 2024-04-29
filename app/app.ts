@@ -2,7 +2,7 @@ import path from 'path';
 import helmet from 'helmet';
 import { Store } from 'express-session';
 import { configure, JourneyContext, Plan, waypointUrl } from "@dwp/govuk-casa";
-import express, { Request, Response } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import postCodeFields from './definitions/post-code';
 import postCodeResultsFields from './definitions/post-code-results';
 import addressConfirmationFields from './definitions/address-confirmation';
@@ -35,6 +35,9 @@ const addressApp = (
 
   plan.setRoute('address-manual', 'address-confirmation');
 
+  plan.setRoute('address-confirmation', 'address-manual', (r, c) => c.data['address-confirmation']?.__skipped__);
+  plan.setRoute('address-confirmation', 'url:///start/', (r, c) => !c.data['address-confirmation']?.__skipped__);
+
   const { mount, ancillaryRouter } = configure({
     views: [viewDir],
     i18n: {
@@ -65,60 +68,51 @@ const addressApp = (
       },
       {
         waypoint: 'address-confirmation',
-        view: 'pages/address-confirmation.njk'
+        view: 'pages/address-confirmation.njk',
+        fields: addressConfirmationFields,
+        hooks: [
+          {
+            hook: 'prerender',
+            middleware: (req: Request, res: Response, next: NextFunction) => {
+              if(req.session.previousUrl === '/address-manual') {
+                const journeyContext = JourneyContext.getDefaultContext(req.session);
+                const data = journeyContext.getDataForPage('address-manual') as { address: string };
+                journeyContext.setDataForPage('address-confirmation', data);
+              }
+
+              if(req.session.previousUrl === '/post-code-results') {
+                const journeyContext = JourneyContext.getDefaultContext(req.session);
+                const data = journeyContext.getDataForPage('post-code-results') as { address: string };
+                journeyContext.setDataForPage('address-confirmation', data);
+              }
+
+              next();
+            }
+          }
+        ]
       },
       {
         waypoint: 'address-manual',
-        view: 'pages/address-manual.njk'
+        view: 'pages/address-manual.njk',
+        fields: addressManualFields,
       }
     ],
-    // hooks: [
-    //   {
-    //     hook: "journey.preredirect",
-    //     middleware: (req: Request, res, next) => {
-    //       req.session.previousUrl = req.originalUrl;
-    //       console.log(req.originalUrl);
-    //       next();
-    //     },
-    //   },
-    // ],
+    hooks: [
+      {
+        hook: "journey.preredirect",
+        middleware: (req: Request, res, next) => {
+          req.session.previousUrl = req.originalUrl;
+          console.log(req.originalUrl);
+          next();
+        },
+      },
+    ],
     plan
   });
 
   ancillaryRouter.use('/start', (req: Request, res: Response) => {
     res.render('pages/start.njk');
   });
-
-  // ancillaryRouter.use('/address-confirmation', (req: Request, res: Response) => {
-  //   const journeyContext = JourneyContext.getDefaultContext(req.session);
-  //   if (req.session.previousUrl === '/post-code-results') {
-  //     console.log('previous page was post-code-results');
-  //     const address = (journeyContext.getDataForPage('post-code-results') as { address: string }).address;
-  //     console.log(address);
-  //     res.locals.address = address;
-  //   } else {
-  //     console.log('previous page was address-manual');
-  //     const address = (journeyContext.getDataForPage('address-manual') as { address: string }).address;
-  //     console.log(address);
-  //     res.locals.address = address;
-  //   }
-  //   res.render('pages/address-confirmation.njk');
-  // });
-
-  // ancillaryRouter.use('/address-manual', (req: Request, res: Response) => {
-  //   if (req.method === 'GET') {
-  //     res.render('pages/address-manual.njk');
-  //     return;
-  //   }
-
-  //   if (req.method === 'POST') {
-  //     console.log(req.body);
-  //     req.session.previousUrl = '/address-manual';
-  //     const journeyContext = JourneyContext.getDefaultContext(req.session);
-  //     journeyContext.setDataForPage('address-manual', { address: req.body.address });
-  //     res.redirect('/address-confirmation');
-  //   }
-  // })
 
   return mount(casaApp, {});
 }
