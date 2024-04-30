@@ -78,12 +78,16 @@ const addressApp = (
                 const journeyContext = JourneyContext.getDefaultContext(req.session);
                 const data = journeyContext.getDataForPage('address-manual') as { address: string };
                 journeyContext.setDataForPage('address-confirmation', data);
+
+                res.locals.casa.journeyPreviousUrl = '/address-manual';
               }
 
               if(req.session.previousUrl === '/post-code-results') {
                 const journeyContext = JourneyContext.getDefaultContext(req.session);
                 const data = journeyContext.getDataForPage('post-code-results') as { address: string };
                 journeyContext.setDataForPage('address-confirmation', data);
+
+                res.locals.casa.journeyPreviousUrl = '/post-code-results';
               }
 
               next();
