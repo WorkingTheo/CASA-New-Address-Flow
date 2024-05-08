@@ -5,9 +5,6 @@
 {% block journey_form %}
   <div class="govuk-width-container">
     <h1 class="govuk-heading-l">Find an address</h1>
-    <p class="govuk-body govuk-!-margin-bottom-0">
-      <a href="/sub/manual-address" class="govuk-link">Enter address manually</a>
-    </p>
 
     {{ govukButton({
       text: "Find address"
@@ -38,7 +35,7 @@
     }) }}
 
     <a href='{{ waypointUrl({ waypoint: casa.waypoint, skipTo: "address-manual" }) }}' class="govuk-link">
-      Manual 
+      Enter the patient's address manually 
     </a>
   </div>
 {% endblock %}

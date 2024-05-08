@@ -12,7 +12,7 @@
         <div class="govuk-form-group">
           {% call govukFieldset({
             legend: {
-              html: legendHtml,
+              text: "Select the patient's address",
               classes: "govuk-fieldset__legend--l"
             }
           }) %}
@@ -50,16 +50,12 @@
               ]
             }) }}
         </div>
-        <p> and . 6 addresses found for <a href="#">Search again</a>
-          <b>wr11nl</b>
-          <b>1</b>
-        </p>
       </div>
     </div>
   </div>
 
   <a href='{{ waypointUrl({ waypoint: casa.waypoint, skipTo: "address-manual" }) }}' class="govuk-link">
-    Manual 
+    Enter the patient's address manually
   </a>
 
 {% endblock %}

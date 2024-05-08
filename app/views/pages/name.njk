@@ -4,6 +4,15 @@
 
 {% block journey_form %}
   <div class="govuk-width-container">
-    <h1 class="govuk-heading-l">Random question</h1>
+    <h1 class="govuk-heading-l">Enter name</h1>
+
+    {{ casaGovukInput({
+      label: {
+        text: "Enter Name"
+      },
+      classes: "govuk-!-width-two-thirds",
+      value: formData.name,
+      name: "name"
+    }) }}
   </div>
 {% endblock %}
