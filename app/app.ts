@@ -1,7 +1,7 @@
 import path from 'path';
 import helmet from 'helmet';
 import { Store } from 'express-session';
-import { configure, JourneyContext, Plan, waypointUrl } from "@dwp/govuk-casa";
+import { configure, JourneyContext, MutableRouter, Plan, waypointUrl } from "@dwp/govuk-casa";
 import express, { NextFunction, Request, Response } from 'express';
 import postCodeFields from './definitions/post-code';
 import postCodeResultsFields from './definitions/post-code-results';
@@ -63,7 +63,7 @@ const addressApp = (
 
   plan.setRoute('address-confirmation', 'url:///start/', (r, c) => !c.data['address-confirmation']?.__skipped__);
 
-  const { mount, ancillaryRouter } = configure({
+  const { mount, ancillaryRouter, journeyRouter } = configure({
     views: [viewDir],
     i18n: {
       dirs: [localesDir],
@@ -138,36 +138,12 @@ const addressApp = (
     ],
     hooks: [
       {
-        hook: "journey.preredirect",
-        middleware: (req: Request, res: Response, next: NextFunction) => {
-          req.session.previousUrl = req.originalUrl;
-
-          // save data to temp waypoints for skippable waypoints
-          const originalUrl = req.originalUrl;
-          const waypoint = originalUrl.replace('/', '');
-          if (
-            waypoint === 'post-code' ||
-            waypoint === 'post-code-results' ||
-            waypoint === 'address-confirmation' ||
-            waypoint === 'address-manual'
-          ) {
-            const journeyContext = JourneyContext.getDefaultContext(req.session);
-            const data = journeyContext.getDataForPage(waypoint);
-            journeyContext.setDataForPage(`temp-${waypoint}`, data);
-          }
-
-          next();
-        },
-      },
-      {
         hook: "journey.prerender",
         middleware: (req: Request, res: Response, next: NextFunction) => {
           console.log('*********');
           console.log('prerender');
           console.log(req.originalUrl);
           const journeyContext = JourneyContext.getDefaultContext(req.session);
-
-
 
           console.log(journeyContext.getData());
 
@@ -183,6 +159,37 @@ const addressApp = (
     ],
     plan
   });
+
+  const prependUseCallback = (req: Request, res: Response, next: NextFunction) => {
+    const journeyContext = JourneyContext.getDefaultContext(req.session);
+    const waypoint = req.originalUrl.replace("/", "");
+    
+    if (req.method === 'GET') {
+      const tempData = journeyContext.getDataForPage(`temp-${waypoint}`);
+      const data = journeyContext.getDataForPage(waypoint) as any;
+
+      if (data?.__skipped__ && tempData !== undefined) {
+        journeyContext.setDataForPage(waypoint, tempData);
+      }
+    }
+
+    if (req.method === 'POST') {
+      journeyContext.setDataForPage(`temp-${waypoint}`, req.body);
+    }
+
+    JourneyContext.putContext(req.session, (req as any).casa.journeyContext);
+    req.session.save(next);
+  };
+
+  const prepareJourneyMiddleware = (journeyRouter: MutableRouter) => {
+    journeyRouter.prependUse('/post-code', prependUseCallback);
+    journeyRouter.prependUse('/post-code-results', prependUseCallback);
+    journeyRouter.prependUse('/address-confirmation', prependUseCallback);
+    journeyRouter.prependUse('/address-manual', prependUseCallback);
+    
+  }
+
+  prepareJourneyMiddleware(journeyRouter);
 
   ancillaryRouter.use('/start', (req: Request, res: Response) => {
     res.render('pages/start.njk');
