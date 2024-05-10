@@ -105,23 +105,11 @@ const addressApp = (
           {
             hook: 'prerender',
             middleware: (req: Request, res: Response, next: NextFunction) => {
-              const journeyContext = JourneyContext.getDefaultContext(req.session);
               if (req.session.previousUrl === '/address-manual') {
-                const data = journeyContext.getDataForPage('address-manual') as {
-                  addressLine1: string;
-                  addressLine2: string;
-                  town: string;
-                  county: string;
-                  postCode: string;
-                };
-                const address = `${data.addressLine1} /n ${data.postCode}`;
-                journeyContext.setDataForPage('address-confirmation', { address });
                 res.locals.casa.journeyPreviousUrl = '/address-manual';
               }
 
               if (req.session.previousUrl === '/post-code-results') {
-                const data = journeyContext.getDataForPage('post-code-results') as { address: string };
-                journeyContext.setDataForPage('address-confirmation', data);
                 res.locals.casa.journeyPreviousUrl = '/post-code-results';
               }
 
@@ -136,27 +124,6 @@ const addressApp = (
         fields: addressManualFields,
       }
     ],
-    hooks: [
-      {
-        hook: "journey.prerender",
-        middleware: (req: Request, res: Response, next: NextFunction) => {
-          console.log('*********');
-          console.log('prerender');
-          console.log(req.originalUrl);
-          const journeyContext = JourneyContext.getDefaultContext(req.session);
-
-          console.log(journeyContext.getData());
-
-          getPageOrTempDataAndSetToPage(journeyContext, 'post-code');
-          getPageOrTempDataAndSetToPage(journeyContext, 'post-code-results');
-          getPageOrTempDataAndSetToPage(journeyContext, 'address-confirmation');
-          getPageOrTempDataAndSetToPage(journeyContext, 'address-manual');
-
-          console.log('*********');
-          next();
-        }
-      }
-    ],
     plan
   });
 
@@ -165,16 +132,31 @@ const addressApp = (
     const waypoint = req.originalUrl.replace("/", "");
     
     if (req.method === 'GET') {
+
       const tempData = journeyContext.getDataForPage(`temp-${waypoint}`);
       const data = journeyContext.getDataForPage(waypoint) as any;
+      console.log({ message: "here", tempData, data, waypoint });
 
-      if (data?.__skipped__ && tempData !== undefined) {
+      if (tempData !== undefined) {
         journeyContext.setDataForPage(waypoint, tempData);
       }
     }
 
     if (req.method === 'POST') {
-      journeyContext.setDataForPage(`temp-${waypoint}`, req.body);
+      if(waypoint === 'post-code-results') {
+        const address = req.body.address;
+        journeyContext.setDataForPage('temp-address-confirmation', { address });
+      } 
+      if(waypoint === 'address-manual') {
+        const { addressLine1, postCode } = req.body;
+        const address = `${addressLine1} - ${postCode}`;
+        journeyContext.setDataForPage('temp-address-confirmation', { address });
+      }
+
+      const data = {...req.body};
+      delete data._csrf;
+      delete data.contextid;
+      journeyContext.setDataForPage(`temp-${waypoint}`, data);
     }
 
     JourneyContext.putContext(req.session, (req as any).casa.journeyContext);
@@ -186,7 +168,6 @@ const addressApp = (
     journeyRouter.prependUse('/post-code-results', prependUseCallback);
     journeyRouter.prependUse('/address-confirmation', prependUseCallback);
     journeyRouter.prependUse('/address-manual', prependUseCallback);
-    
   }
 
   prepareJourneyMiddleware(journeyRouter);
