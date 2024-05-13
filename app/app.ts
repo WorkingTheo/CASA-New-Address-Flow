@@ -9,6 +9,7 @@ import addressConfirmationFields from './definitions/address-confirmation';
 import addressManualFields from './definitions/address-manual';
 import nameFields from './definitions/name';
 import surnameFields from './definitions/surname';
+import axios from 'axios';
 
 const getPageData = (journeyContext: JourneyContext, waypoint: string) => {
   const pageData = journeyContext.getDataForPage(waypoint);
@@ -33,6 +34,8 @@ const applyTempData = (req: Request, journeyContext: JourneyContext, waypoint: s
     journeyContext.setDataForPage(`temp-${waypoint}`, getPageData(journeyContext, waypoint));
   }
 }
+
+const FOUND_ADDRESSES_DATA = 'found-addresses-data';
 
 const addressApp = (
   name: string,
@@ -90,7 +93,7 @@ const addressApp = (
       {
         waypoint: 'post-code',
         view: 'pages/post-code.njk',
-        fields: postCodeFields
+        fields: postCodeFields,
       },
       {
         waypoint: 'post-code-results',
@@ -127,10 +130,10 @@ const addressApp = (
     plan
   });
 
-  const prependUseCallback = (req: Request, res: Response, next: NextFunction) => {
+  const prependUseCallback = async (req: Request, res: Response, next: NextFunction) => {
     const journeyContext = JourneyContext.getDefaultContext(req.session);
     const waypoint = req.originalUrl.replace("/", "");
-    
+
     if (req.method === 'GET') {
 
       const tempData = journeyContext.getDataForPage(`temp-${waypoint}`);
@@ -140,20 +143,48 @@ const addressApp = (
       if (tempData !== undefined) {
         journeyContext.setDataForPage(waypoint, tempData);
       }
+
+      if(waypoint === 'post-code-results') {
+        // hooks: [
+        //   {
+        //     hook: 'prerender',
+        //     middleware: (req: Request, res: Response, next: NextFunction) => {
+        //       const journeyContext = JourneyContext.getDefaultContext(req.session);
+        //       const { addresses } = journeyContext.getDataForPage(FOUND_ADDRESSES_DATA) as { addresses: string[] };
+
+        //       const addressOptions = addresses.map(address => ({ value: address, text: address}));
+        //       res.locals.addressOptions = addressOptions;
+        //       next();
+        //     }
+        //   }
+        // ]
+
+        const { addresses } = journeyContext.getDataForPage(FOUND_ADDRESSES_DATA) as { addresses: string[] };
+        const addressOptions = addresses.map(address => ({ value: address, text: address}));
+        res.locals.addressOptions = addressOptions; 
+      }
     }
 
     if (req.method === 'POST') {
-      if(waypoint === 'post-code-results') {
+      if (waypoint === 'post-code-results') {
         const address = req.body.address;
         journeyContext.setDataForPage('temp-address-confirmation', { address });
-      } 
-      if(waypoint === 'address-manual') {
+      }
+      if (waypoint === 'address-manual') {
         const { addressLine1, postCode } = req.body;
         const address = `${addressLine1} - ${postCode}`;
         journeyContext.setDataForPage('temp-address-confirmation', { address });
       }
+      if (waypoint === 'post-code') {
+        const data = req.body;
+        const results = await axios.post<string[]>('http://localhost:3001/address', data);
+        console.log('GOT RESULTS HERE');
+        const addresses = results.data;
+        console.log(addresses);
+        journeyContext.setDataForPage(FOUND_ADDRESSES_DATA, { addresses });
+      }
 
-      const data = {...req.body};
+      const data = { ...req.body };
       delete data._csrf;
       delete data.contextid;
       journeyContext.setDataForPage(`temp-${waypoint}`, data);
