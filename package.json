@@ -2,9 +2,9 @@
   "scripts": {
     "compile": "gulp compile",
     "myapp": "node dist/server.js",
-    "start": "npm run compile && npm run myapp",
+    "start:service": "npm run compile && npm run myapp",
     "start:mock": "node addressMockService/addressMockService.js",
-    "start:all": "npm run start:mock & npm run start"
+    "start": "npm run start:mock & npm run start:service"
   },
   "dependencies": {
     "@dwp/govuk-casa": "8.11.0",
