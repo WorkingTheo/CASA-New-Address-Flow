@@ -53,10 +53,11 @@ const addressApp = (
   const plan = new Plan();
 
   plan.addSequence('name', 'surname', 'post-code');
-  plan.addSkippables('post-code', 'post-code-results', 'address-manual', 'address-confirmation', 'url:///start/');
+  plan.addSkippables('post-code', 'post-code-results', 'address-not-found', 'address-manual', 'address-confirmation', 'url:///start/');
 
   plan.setRoute('post-code', 'address-manual', (r, c) => c.data['post-code']?.__skipped__);
-  plan.setRoute('post-code', 'post-code-results', (r, c) => !c.data['post-code']?.__skipped__);
+  plan.setRoute('post-code', 'post-code-results', (r, c) => !c.data['post-code']?.__skipped__ && c.data[FOUND_ADDRESSES_DATA]?.addresses.length > 0);
+  plan.setRoute('post-code', 'address-not-found', (r, c) => !c.data['post-code']?.__skipped__ && c.data[FOUND_ADDRESSES_DATA]?.addresses.length === 0);
 
   plan.setRoute('post-code-results', 'address-manual', (r, c) => c.data['post-code-results']?.__skipped__);
   plan.setRoute('post-code-results', 'address-confirmation', (r, c) => !c.data['post-code-results']?.__skipped__);
@@ -125,6 +126,10 @@ const addressApp = (
         waypoint: 'address-manual',
         view: 'pages/address-manual.njk',
         fields: addressManualFields,
+      },
+      {
+        waypoint: 'address-not-found',
+        view: 'pages/address-not-found.njk'
       }
     ],
     plan
@@ -144,7 +149,7 @@ const addressApp = (
         journeyContext.setDataForPage(waypoint, tempData);
       }
 
-      if(waypoint === 'post-code-results') {
+      if (waypoint === 'post-code-results') {
         // hooks: [
         //   {
         //     hook: 'prerender',
@@ -160,8 +165,8 @@ const addressApp = (
         // ]
 
         const { addresses } = journeyContext.getDataForPage(FOUND_ADDRESSES_DATA) as { addresses: string[] };
-        const addressOptions = addresses.map(address => ({ value: address, text: address}));
-        res.locals.addressOptions = addressOptions; 
+        const addressOptions = addresses.map(address => ({ value: address, text: address }));
+        res.locals.addressOptions = addressOptions;
       }
     }
 
