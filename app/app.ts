@@ -11,31 +11,20 @@ import nameFields from './definitions/name';
 import surnameFields from './definitions/surname';
 import axios from 'axios';
 
-const getPageData = (journeyContext: JourneyContext, waypoint: string) => {
-  const pageData = journeyContext.getDataForPage(waypoint);
-  return pageData;
-}
-
-const getPageOrTempDataAndSetToPage = (journeyContext: JourneyContext, waypoint: string) => {
-  const pageData = getPageData(journeyContext, waypoint) ??
-    getPageData(journeyContext, `temp-${waypoint}`);
-
-  journeyContext.setDataForPage(waypoint, pageData);
-}
-
-const applyTempData = (req: Request, journeyContext: JourneyContext, waypoint: string) => {
-  const tempData = getPageData(journeyContext, `temp-${waypoint}`);
-  if (!req.query?.skipto) {
-    journeyContext.setDataForPage(waypoint, tempData);
-  }
-
-  const skipped = (getPageData(journeyContext, waypoint) as any).__skipped__;
-  if (!skipped) {
-    journeyContext.setDataForPage(`temp-${waypoint}`, getPageData(journeyContext, waypoint));
-  }
-}
-
 const FOUND_ADDRESSES_DATA = 'found-addresses-data';
+
+export const removeWaypointsFromJourneyContext = (req: Request, waypoints: string[], includeTempData?: boolean) => {
+  const allData = (req as any).casa.journeyContext.getData();
+  const allWaypoints = Object.keys(allData);
+  const removedData = allWaypoints.reduce((acc, waypoint) => {
+    const removeTempWaypoint = waypoints.includes(waypoint.replace('temp-', '')) && includeTempData;
+    if (waypoints.includes(waypoint) || removeTempWaypoint) {
+      return acc;
+    }
+    return { ...acc, [waypoint]: allData[waypoint] };
+  }, {});
+  (req as any).casa.journeyContext.setData(removedData);
+};
 
 const addressApp = (
   name: string,
@@ -59,6 +48,8 @@ const addressApp = (
   plan.setRoute('post-code', 'post-code-results', (r, c) => !c.data['post-code']?.__skipped__ && c.data[FOUND_ADDRESSES_DATA]?.addresses.length > 0);
   plan.setRoute('post-code', 'address-not-found', (r, c) => !c.data['post-code']?.__skipped__ && c.data[FOUND_ADDRESSES_DATA]?.addresses.length === 0);
 
+  plan.setRoute('address-not-found', 'address-manual', (r, c) => c.data['address-not-found']?.__skipped__);
+  
   plan.setRoute('post-code-results', 'address-manual', (r, c) => c.data['post-code-results']?.__skipped__);
   plan.setRoute('post-code-results', 'address-confirmation', (r, c) => !c.data['post-code-results']?.__skipped__);
 
@@ -150,23 +141,28 @@ const addressApp = (
       }
 
       if (waypoint === 'post-code-results') {
-        // hooks: [
-        //   {
-        //     hook: 'prerender',
-        //     middleware: (req: Request, res: Response, next: NextFunction) => {
-        //       const journeyContext = JourneyContext.getDefaultContext(req.session);
-        //       const { addresses } = journeyContext.getDataForPage(FOUND_ADDRESSES_DATA) as { addresses: string[] };
-
-        //       const addressOptions = addresses.map(address => ({ value: address, text: address}));
-        //       res.locals.addressOptions = addressOptions;
-        //       next();
-        //     }
-        //   }
-        // ]
-
         const { addresses } = journeyContext.getDataForPage(FOUND_ADDRESSES_DATA) as { addresses: string[] };
         const addressOptions = addresses.map(address => ({ value: address, text: address }));
         res.locals.addressOptions = addressOptions;
+      }
+
+      if (waypoint === 'address-not-found') {
+        console.log('INSIDE ADDRESS_NOT_FOUND BIT');
+        // journeyContext.purge([
+        //   'post-code', 'temp-post-code', 'post-code-results',
+        //   'temp-post-code-results', 'address-confirmation', 'temp-address-confirmation'
+        // ]);
+
+        const waypointsToClear = [
+          'post-code', 'temp-post-code', 'post-code-results',
+          'temp-post-code-results', 'address-confirmation', 'temp-address-confirmation'
+        ];
+
+        removeWaypointsFromJourneyContext(req, waypointsToClear);
+
+        // waypointsToClear.forEach(waypoint => {
+        //   journeyContext.setDataForPage(waypoint, {});
+        // })
       }
     }
 
@@ -204,6 +200,7 @@ const addressApp = (
     journeyRouter.prependUse('/post-code-results', prependUseCallback);
     journeyRouter.prependUse('/address-confirmation', prependUseCallback);
     journeyRouter.prependUse('/address-manual', prependUseCallback);
+    journeyRouter.prependUse('/address-not-found', prependUseCallback);
   }
 
   prepareJourneyMiddleware(journeyRouter);
