@@ -147,22 +147,12 @@ const addressApp = (
       }
 
       if (waypoint === 'address-not-found') {
-        console.log('INSIDE ADDRESS_NOT_FOUND BIT');
-        // journeyContext.purge([
-        //   'post-code', 'temp-post-code', 'post-code-results',
-        //   'temp-post-code-results', 'address-confirmation', 'temp-address-confirmation'
-        // ]);
-
         const waypointsToClear = [
           'post-code', 'temp-post-code', 'post-code-results',
           'temp-post-code-results', 'address-confirmation', 'temp-address-confirmation'
         ];
 
         removeWaypointsFromJourneyContext(req, waypointsToClear);
-
-        // waypointsToClear.forEach(waypoint => {
-        //   journeyContext.setDataForPage(waypoint, {});
-        // })
       }
     }
 
