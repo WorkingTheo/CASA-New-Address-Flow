@@ -26,6 +26,17 @@ export const removeWaypointsFromJourneyContext = (req: Request, waypoints: strin
   (req as any).casa.journeyContext.setData(removedData);
 };
 
+export const applySkipMeta = (req: Request, waypoint: string, skipto: string) => {
+  console.log({ place: 'APPLYSKIPMETA', waypoint, skipto });
+  (req as any).casa.journeyContext.setDataForPage('skippedTo', { __skipmeta__: skipto });
+  (req as any).casa.journeyContext.setDataForPage('skippedFrom', { __skipmeta__: waypoint });
+}
+
+export const clearSkipMeta = (req: Request) => {
+  (req as any).casa.journeyContext.setDataForPage('skippedTo', {});
+  (req as any).casa.journeyContext.setDataForPage('skippedFrom', {});
+}
+
 const addressApp = (
   name: string,
   secret: string,
@@ -44,17 +55,43 @@ const addressApp = (
   plan.addSequence('name', 'surname', 'post-code');
   plan.addSkippables('post-code', 'post-code-results', 'address-not-found', 'address-manual', 'address-confirmation', 'url:///start/');
 
-  plan.setRoute('post-code', 'address-manual', (r, c) => c.data['post-code']?.__skipped__);
+  plan.setRoute('post-code', 'address-manual', (r, c) => {
+    console.log({ location: 'postcode -> addressmanual condition', data: c.getData() });
+    return c.data['post-code']?.__skipped__ &&
+      c.data.skippedTo.__skipmeta__ === 'address-manual'
+    //&& c.data.skippedFrom.__skipmeta__ === 'post-code'
+  }
+  );
+
   plan.setRoute('post-code', 'post-code-results', (r, c) => !c.data['post-code']?.__skipped__ && c.data[FOUND_ADDRESSES_DATA]?.addresses.length > 0);
   plan.setRoute('post-code', 'address-not-found', (r, c) => !c.data['post-code']?.__skipped__ && c.data[FOUND_ADDRESSES_DATA]?.addresses.length === 0);
 
-  plan.setRoute('address-not-found', 'address-manual', (r, c) => c.data['address-not-found']?.__skipped__);
-  
-  plan.setRoute('post-code-results', 'address-manual', (r, c) => c.data['post-code-results']?.__skipped__);
+  plan.setRoute('address-not-found', 'address-manual', (r, c) =>
+    c.data['address-not-found']?.__skipped__ &&
+    c.data.skippedTo.__skipmeta__ === 'address-manual' &&
+    c.data.skippedFrom.__skipmeta__ === 'address-not-found'
+  );
+
+  plan.setRoute('address-not-found', 'post-code', (r, c) =>
+    c.data['address-not-found']?.__skipped__ &&
+    c.data.skippedTo.__skipmeta__ === 'post-code' &&
+    c.data.skippedFrom.__skipmeta__ === 'address-not-found'
+  );
+
+  plan.setRoute('post-code-results', 'address-manual', (r, c) =>
+    c.data['post-code-results']?.__skipped__ &&
+    c.data.skippedTo.__skipmeta__ === 'address-manual' &&
+    c.data.skippedFrom.__skipmeta__ === 'post-code-results');
+
   plan.setRoute('post-code-results', 'address-confirmation', (r, c) => !c.data['post-code-results']?.__skipped__);
 
-  plan.setRoute('address-manual', 'address-confirmation');
-  plan.setRoute('address-confirmation', 'address-manual', (r, c) => c.data['address-confirmation']?.__skipped__);
+  plan.setRoute('address-manual', 'address-confirmation', (r, c) => !c.data['address-manual']?.__skipped__);
+
+  plan.setRoute('address-confirmation', 'address-manual', (r, c) =>
+    c.data['address-confirmation']?.__skipped__ &&
+    c.data.skippedTo.__skipmeta__ === 'address-manual'
+    //&& c.data.skippedFrom.__skipmeta__ === 'address-confirmation'
+  );
 
   plan.setRoute('address-confirmation', 'url:///start/', (r, c) => !c.data['address-confirmation']?.__skipped__);
 
@@ -127,21 +164,20 @@ const addressApp = (
   });
 
   const prependUseCallback = async (req: Request, res: Response, next: NextFunction) => {
-    const journeyContext = JourneyContext.getDefaultContext(req.session);
-    const waypoint = req.originalUrl.replace("/", "");
+    // try from request object 
+    const waypoint = (req as any)._parsedUrl.pathname.replace('/', '');
+
+    console.log({ place: 'PREPEND', waypoint });
 
     if (req.method === 'GET') {
-
-      const tempData = journeyContext.getDataForPage(`temp-${waypoint}`);
-      const data = journeyContext.getDataForPage(waypoint) as any;
-      console.log({ message: "here", tempData, data, waypoint });
+      const tempData = (req as any).casa.journeyContext.getDataForPage(`temp-${waypoint}`);
 
       if (tempData !== undefined) {
-        journeyContext.setDataForPage(waypoint, tempData);
+        (req as any).casa.journeyContext.setDataForPage(waypoint, tempData);
       }
 
       if (waypoint === 'post-code-results') {
-        const { addresses } = journeyContext.getDataForPage(FOUND_ADDRESSES_DATA) as { addresses: string[] };
+        const { addresses } = (req as any).casa.journeyContext.getDataForPage(FOUND_ADDRESSES_DATA) as { addresses: string[] };
         const addressOptions = addresses.map(address => ({ value: address, text: address }));
         res.locals.addressOptions = addressOptions;
       }
@@ -159,12 +195,12 @@ const addressApp = (
     if (req.method === 'POST') {
       if (waypoint === 'post-code-results') {
         const address = req.body.address;
-        journeyContext.setDataForPage('temp-address-confirmation', { address });
+        (req as any).casa.journeyContext.setDataForPage('temp-address-confirmation', { address });
       }
       if (waypoint === 'address-manual') {
         const { addressLine1, postCode } = req.body;
         const address = `${addressLine1} - ${postCode}`;
-        journeyContext.setDataForPage('temp-address-confirmation', { address });
+        (req as any).casa.journeyContext.setDataForPage('temp-address-confirmation', { address });
       }
       if (waypoint === 'post-code') {
         const data = req.body;
@@ -172,17 +208,23 @@ const addressApp = (
         console.log('GOT RESULTS HERE');
         const addresses = results.data;
         console.log(addresses);
-        journeyContext.setDataForPage(FOUND_ADDRESSES_DATA, { addresses });
+        (req as any).casa.journeyContext.setDataForPage(FOUND_ADDRESSES_DATA, { addresses });
       }
 
       const data = { ...req.body };
       delete data._csrf;
       delete data.contextid;
-      journeyContext.setDataForPage(`temp-${waypoint}`, data);
+      (req as any).casa.journeyContext.setDataForPage(`temp-${waypoint}`, data);
+    }
+
+    if (req.query.skipto) {
+      applySkipMeta(req, waypoint, req.query.skipto as string);
     }
 
     JourneyContext.putContext(req.session, (req as any).casa.journeyContext);
     req.session.save(next);
+
+    console.log((req as any).casa.journeyContext.getData());
   };
 
   const prepareJourneyMiddleware = (journeyRouter: MutableRouter) => {
