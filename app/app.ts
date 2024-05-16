@@ -55,12 +55,10 @@ const addressApp = (
   plan.addSequence('name', 'surname', 'post-code');
   plan.addSkippables('post-code', 'post-code-results', 'address-not-found', 'address-manual', 'address-confirmation', 'url:///start/');
 
-  plan.setRoute('post-code', 'address-manual', (r, c) => {
-    console.log({ location: 'postcode -> addressmanual condition', data: c.getData() });
-    return c.data['post-code']?.__skipped__ &&
-      c.data.skippedTo.__skipmeta__ === 'address-manual'
-    //&& c.data.skippedFrom.__skipmeta__ === 'post-code'
-  }
+  plan.setRoute('post-code', 'address-manual', (r, c) =>
+    c.data['post-code']?.__skipped__ &&
+    c.data.skippedTo.__skipmeta__ === 'address-manual' &&
+    c.data.skippedFrom.__skipmeta__ === 'post-code'
   );
 
   plan.setRoute('post-code', 'post-code-results', (r, c) => !c.data['post-code']?.__skipped__ && c.data[FOUND_ADDRESSES_DATA]?.addresses.length > 0);
@@ -71,7 +69,6 @@ const addressApp = (
     c.data.skippedTo.__skipmeta__ === 'address-manual' &&
     c.data.skippedFrom.__skipmeta__ === 'address-not-found'
   );
-
   plan.setRoute('address-not-found', 'post-code', (r, c) =>
     c.data['address-not-found']?.__skipped__ &&
     c.data.skippedTo.__skipmeta__ === 'post-code' &&
@@ -84,13 +81,22 @@ const addressApp = (
     c.data.skippedFrom.__skipmeta__ === 'post-code-results');
 
   plan.setRoute('post-code-results', 'address-confirmation', (r, c) => !c.data['post-code-results']?.__skipped__);
-
   plan.setRoute('address-manual', 'address-confirmation', (r, c) => !c.data['address-manual']?.__skipped__);
 
   plan.setRoute('address-confirmation', 'address-manual', (r, c) =>
     c.data['address-confirmation']?.__skipped__ &&
     c.data.skippedTo.__skipmeta__ === 'address-manual'
-    //&& c.data.skippedFrom.__skipmeta__ === 'address-confirmation'
+    && c.data.skippedFrom.__skipmeta__ === 'address-confirmation'
+  );
+  plan.setRoute('address-confirmation', 'post-code', (r, c) =>
+    c.data['address-confirmation']?.__skipped__ &&
+    c.data.skippedTo.__skipmeta__ === 'post-code'
+    && c.data.skippedFrom.__skipmeta__ === 'address-confirmation'
+  );
+  plan.setRoute('address-confirmation', 'post-code-results', (r, c) =>
+    c.data['address-confirmation']?.__skipped__ &&
+    c.data.skippedTo.__skipmeta__ === 'post-code-results'
+    && c.data.skippedFrom.__skipmeta__ === 'address-confirmation'
   );
 
   plan.setRoute('address-confirmation', 'url:///start/', (r, c) => !c.data['address-confirmation']?.__skipped__);
@@ -203,12 +209,16 @@ const addressApp = (
         (req as any).casa.journeyContext.setDataForPage('temp-address-confirmation', { address });
       }
       if (waypoint === 'post-code') {
-        const data = req.body;
-        const results = await axios.post<string[]>('http://localhost:3001/address', data);
-        console.log('GOT RESULTS HERE');
-        const addresses = results.data;
-        console.log(addresses);
-        (req as any).casa.journeyContext.setDataForPage(FOUND_ADDRESSES_DATA, { addresses });
+        try {
+          const data = req.body;
+          const results = await axios.post<string[]>('http://localhost:3001/address', data);
+          console.log('GOT RESULTS HERE');
+          const addresses = results.data;
+          console.log(addresses);
+          (req as any).casa.journeyContext.setDataForPage(FOUND_ADDRESSES_DATA, { addresses });
+        } catch(error) {
+          console.log('failed to fetch data from address service');
+        }
       }
 
       const data = { ...req.body };
