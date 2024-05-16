@@ -52,15 +52,17 @@ const addressApp = (
 
   const plan = new Plan();
 
-  plan.addSequence('name', 'surname', 'post-code');
+  plan.addSequence('name', 'surname');
   plan.addSkippables('post-code', 'post-code-results', 'address-not-found', 'address-manual', 'address-confirmation', 'url:///start/');
+
+  plan.setRoute('surname', 'post-code', (r, c) => c.data['temp-address-confirmation']?.address === undefined);
+  plan.setRoute('surname', 'address-confirmation', (r, c) => c.data['temp-address-confirmation']?.address !== undefined);
 
   plan.setRoute('post-code', 'address-manual', (r, c) =>
     c.data['post-code']?.__skipped__ &&
     c.data.skippedTo.__skipmeta__ === 'address-manual' &&
     c.data.skippedFrom.__skipmeta__ === 'post-code'
   );
-
   plan.setRoute('post-code', 'post-code-results', (r, c) => !c.data['post-code']?.__skipped__ && c.data[FOUND_ADDRESSES_DATA]?.addresses.length > 0);
   plan.setRoute('post-code', 'address-not-found', (r, c) => !c.data['post-code']?.__skipped__ && c.data[FOUND_ADDRESSES_DATA]?.addresses.length === 0);
 
@@ -79,9 +81,14 @@ const addressApp = (
     c.data['post-code-results']?.__skipped__ &&
     c.data.skippedTo.__skipmeta__ === 'address-manual' &&
     c.data.skippedFrom.__skipmeta__ === 'post-code-results');
-
   plan.setRoute('post-code-results', 'address-confirmation', (r, c) => !c.data['post-code-results']?.__skipped__);
+
   plan.setRoute('address-manual', 'address-confirmation', (r, c) => !c.data['address-manual']?.__skipped__);
+  plan.setRoute('address-manual', 'post-code', (r, c) =>
+    c.data['address-manual']?.__skipped__ &&
+    c.data.skippedTo.__skipmeta__ === 'post-code' &&
+    c.data.skippedFrom.__skipmeta__ === 'address-manual'
+  );
 
   plan.setRoute('address-confirmation', 'address-manual', (r, c) =>
     c.data['address-confirmation']?.__skipped__ &&
@@ -98,8 +105,7 @@ const addressApp = (
     c.data.skippedTo.__skipmeta__ === 'post-code-results'
     && c.data.skippedFrom.__skipmeta__ === 'address-confirmation'
   );
-
-  plan.setRoute('address-confirmation', 'url:///start/', (r, c) => !c.data['address-confirmation']?.__skipped__);
+  plan.setRoute('address-confirmation', 'url:///start/', (r, c) => c.data['address-confirmation']?.__skipped__ !== true);
 
   const { mount, ancillaryRouter, journeyRouter } = configure({
     views: [viewDir],
@@ -216,15 +222,17 @@ const addressApp = (
           const addresses = results.data;
           console.log(addresses);
           (req as any).casa.journeyContext.setDataForPage(FOUND_ADDRESSES_DATA, { addresses });
-        } catch(error) {
+        } catch (error) {
           console.log('failed to fetch data from address service');
         }
       }
 
-      const data = { ...req.body };
-      delete data._csrf;
-      delete data.contextid;
-      (req as any).casa.journeyContext.setDataForPage(`temp-${waypoint}`, data);
+      if (waypoint !== 'address-confirmation') {
+        const data = { ...req.body };
+        delete data._csrf;
+        delete data.contextid;
+        (req as any).casa.journeyContext.setDataForPage(`temp-${waypoint}`, data);
+      }
     }
 
     if (req.query.skipto) {
