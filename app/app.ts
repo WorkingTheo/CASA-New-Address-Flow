@@ -202,6 +202,29 @@ const addressApp = (
 
         removeWaypointsFromJourneyContext(req, waypointsToClear);
       }
+
+      if (waypoint === 'address-confirmation') {
+        const skipto = req.query.skipto;
+        if (skipto === 'post-code') {
+          const waypointsToClear = [
+            'post-code', 'temp-post-code', 'post-code-results',
+            'temp-post-code-results', 'address-confirmation', 'temp-address-confirmation'
+          ];
+
+          removeWaypointsFromJourneyContext(req, waypointsToClear);
+        }
+
+        if (skipto === 'address-manual') {
+          const waypointsToClear = [
+            'post-code', 'temp-post-code', 
+            'post-code-results', 'temp-post-code-results', 
+            'address-manual', 'temp-address-manual',
+            'address-confirmation', 'temp-address-confirmation'
+          ];
+
+          removeWaypointsFromJourneyContext(req, waypointsToClear);
+        }
+      }
     }
 
     if (req.method === 'POST') {
