@@ -1,0 +1,24 @@
+{% extends "layouts/main.njk" %}
+
+{% block casaPageTitle %}
+  {{ t('start:pageTitle') }}
+{% endblock %}
+
+{% block content %}
+  <h1 class="govuk-heading-xl">
+    Patient's address not found
+  </h1>
+
+  <p>
+    We couldn't find the patient's address with the post code you supplied.
+  </p>
+
+  <a href='{{ waypointUrl({ waypoint: casa.waypoint, skipTo: "post-code" }) }}' class="govuk-link">
+    Search again
+  </a>
+
+  <a href='{{ waypointUrl({ waypoint: casa.waypoint, skipTo: "address-manual" }) }}' class="govuk-link">
+    Enter the patient's address manually 
+  </a>
+
+{% endblock %}
