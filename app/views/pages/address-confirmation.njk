@@ -19,9 +19,12 @@
 
     <a href="/start">Go to start</a>
 
-    <a href='{{ waypointUrl({ waypoint: casa.waypoint, skipTo: "post-code-results" }) }}' class="govuk-link">
-      Use a different address 
-    </a>
+    {% if useDifferentAddress %}
+      <a href='{{ waypointUrl({ waypoint: casa.waypoint, skipTo: "post-code-results" }) }}' class="govuk-link">
+        Use a different address 
+      </a>
+    {% endif %}
+
     <a href='{{ waypointUrl({ waypoint: casa.waypoint, skipTo: "address-manual" }) }}' class="govuk-link">
       Enter the patient's address manually 
     </a>

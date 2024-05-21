@@ -6,8 +6,8 @@ export const plan = new Plan();
 plan.addSequence('name', 'surname');
 plan.addSkippables('post-code', 'post-code-results', 'address-not-found', 'address-manual', 'address-confirmation', 'url:///start/');
 
-plan.setRoute('surname', 'post-code', (r, c) => c.data['temp-address-confirmation']?.address === undefined);
-plan.setRoute('surname', 'address-confirmation', (r, c) => c.data['temp-address-confirmation']?.address !== undefined);
+plan.setRoute('surname', 'post-code', (r, c) => c.data['address-confirmation']?.address === undefined);
+plan.setRoute('surname', 'address-confirmation', (r, c) => c.data['address-confirmation']?.address !== undefined);
 
 plan.setRoute('post-code', 'address-manual', (r, c) =>
   c.data['post-code']?.__skipped__ &&

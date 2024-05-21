@@ -17,6 +17,20 @@ export const removeWaypointsFromJourneyContext = (req: Request, waypoints: strin
   (req as any).casa.journeyContext.setData(removedData);
 };
 
+// export const removeWaypointsFromJourneyContext = (req: Request, waypoints: string[], includeTempData?: boolean) => {
+//   const allData = (req as any).casa.journeyContext.getData();
+
+//   const filteredData = {};
+//   Object.entries(allData).forEach(([waypoint, value]) => {
+//     if(waypoints.includes(waypoint)) {
+//       return;
+//     }
+
+//     filteredData[waypoint] = value;
+//   });
+//   (req as any).casa.journeyContext.setData(filteredData);
+// };
+
 export const applySkipMeta = (req: Request, waypoint: string, skipto: string) => {
   console.log({ place: 'APPLYSKIPMETA', waypoint, skipto });
   (req as any).casa.journeyContext.setDataForPage('skippedTo', { __skipmeta__: skipto });
@@ -34,34 +48,60 @@ const prependUseCallback = async (req: Request, res: Response, next: NextFunctio
 
   console.log({ place: 'PREPEND', waypoint });
 
+  var toApplySkipMeta = true;
+
   if (req.method === 'GET') {
     const tempData = (req as any).casa.journeyContext.getDataForPage(`temp-${waypoint}`);
+    const skipto = req.query.skipto;
 
     if (tempData !== undefined) {
       (req as any).casa.journeyContext.setDataForPage(waypoint, tempData);
+    }
+
+    if (waypoint === 'post-code') {
+      if (skipto === 'address-manual') {
+        const waypointsToClear = [
+          'address-confirmation', 'temp-address-confirmation',
+          'address-manual', 'temp-manual-confirmation'
+        ];
+        console.log({ loc: 'HERE', waypointsToClear });
+        removeWaypointsFromJourneyContext(req, waypointsToClear);
+
+      }
     }
 
     if (waypoint === 'post-code-results') {
       const { addresses } = (req as any).casa.journeyContext.getDataForPage(FOUND_ADDRESSES_DATA) as { addresses: string[] };
       const addressOptions = addresses.map(address => ({ value: address, text: address }));
       res.locals.addressOptions = addressOptions;
+
+      if (skipto === 'address-manual') {
+        const waypointsToClear = [
+          'address-confirmation', 'temp-address-confirmation',
+          'address-manual', 'temp-manual-confirmation',
+        ];
+        removeWaypointsFromJourneyContext(req, waypointsToClear);
+      }
     }
 
     if (waypoint === 'address-not-found') {
-      const waypointsToClear = [
-        'post-code', 'temp-post-code', 'post-code-results',
-        'temp-post-code-results', 'address-confirmation', 'temp-address-confirmation'
-      ];
+      // const waypointsToClear = [
+      //   'address-confirmation', 'temp-address-confirmation'
+      // ];
 
-      removeWaypointsFromJourneyContext(req, waypointsToClear);
+      // removeWaypointsFromJourneyContext(req, waypointsToClear);
     }
 
     if (waypoint === 'address-confirmation') {
-      const skipto = req.query.skipto;
+      const foundAddressData = (req as any).casa.journeyContext.getDataForPage(FOUND_ADDRESSES_DATA) as { addresses: string[] };
+      res.locals.useDifferentAddress = foundAddressData?.addresses.length > 0
+
       if (skipto === 'post-code') {
         const waypointsToClear = [
-          'post-code', 'temp-post-code', 'post-code-results',
-          'temp-post-code-results', 'address-confirmation', 'temp-address-confirmation'
+          'post-code', 'temp-post-code', 
+          'post-code-results', 'temp-post-code-results', 
+          'address-confirmation', 'temp-address-confirmation',
+          'address-manual', 'temp-manual-confirmation',
         ];
 
         removeWaypointsFromJourneyContext(req, waypointsToClear);
@@ -75,7 +115,13 @@ const prependUseCallback = async (req: Request, res: Response, next: NextFunctio
           'address-confirmation', 'temp-address-confirmation'
         ];
 
+        console.log({ skipto, waypointsToClear });
+
         removeWaypointsFromJourneyContext(req, waypointsToClear);
+
+        (req as any).casa.journeyContext.setDataForPage('post-code', { __skipped__: true });
+        applySkipMeta(req, 'post-code', 'address-manual');
+        toApplySkipMeta = false;
       }
     }
   }
@@ -111,7 +157,7 @@ const prependUseCallback = async (req: Request, res: Response, next: NextFunctio
     }
   }
 
-  if (req.query.skipto) {
+  if (req.query.skipto && toApplySkipMeta) {
     applySkipMeta(req, waypoint, req.query.skipto as string);
   }
 
