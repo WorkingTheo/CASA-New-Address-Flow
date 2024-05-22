@@ -1,6 +1,7 @@
 {% extends "layouts/journey.njk" %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
+{% from "casa/components/input/macro.njk" import casaGovukInput with context %}
 
 {% block journey_form %}
   <div class="govuk-width-container">
@@ -15,6 +16,12 @@
 
     {{ govukInsetText({
       text: formData.address
+    }) }}
+
+    {{ casaGovukInput({
+      classes: "hidden",
+      value: formData.address,
+      name: "address"
     }) }}
 
     <a href="/start">Go to start</a>

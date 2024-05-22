@@ -54,6 +54,10 @@ const prependUseCallback = async (req: Request, res: Response, next: NextFunctio
     const tempData = (req as any).casa.journeyContext.getDataForPage(`temp-${waypoint}`);
     const skipto = req.query.skipto;
 
+    const data = (req as any).casa.journeyContext.getDataForPage('temp-address-confirmation');
+    console.log({ place: 'POST /address-confirmation', data });
+    (req as any).casa.journeyContext.setDataForPage('address-confirmation', data);
+
     if (tempData !== undefined) {
       (req as any).casa.journeyContext.setDataForPage(waypoint, tempData);
     }
@@ -93,13 +97,25 @@ const prependUseCallback = async (req: Request, res: Response, next: NextFunctio
     }
 
     if (waypoint === 'address-confirmation') {
-      const foundAddressData = (req as any).casa.journeyContext.getDataForPage(FOUND_ADDRESSES_DATA) as { addresses: string[] };
-      res.locals.useDifferentAddress = foundAddressData?.addresses.length > 0
+      // const foundAddressData = (req as any).casa.journeyContext.getDataForPage(FOUND_ADDRESSES_DATA) as { addresses: string[] };
+      // res.locals.useDifferentAddress = foundAddressData?.addresses.length > 0
+
+      const data = (req as any).casa.journeyContext.getDataForPage('post-code-results');
+      res.locals.useDifferentAddress = data?.address !== undefined;
 
       if (skipto === 'post-code') {
         const waypointsToClear = [
           'post-code', 'temp-post-code', 
           'post-code-results', 'temp-post-code-results', 
+          'address-confirmation', 'temp-address-confirmation',
+          'address-manual', 'temp-manual-confirmation',
+        ];
+
+        removeWaypointsFromJourneyContext(req, waypointsToClear);
+      }
+
+      if (skipto === 'post-code-results') {
+        const waypointsToClear = [
           'address-confirmation', 'temp-address-confirmation',
           'address-manual', 'temp-manual-confirmation',
         ];
