@@ -1,6 +1,7 @@
 {% extends "layouts/journey.njk" %}
 {% from "govuk/components/button/macro.njk" import govukButton %}
 {% from "govuk/components/inset-text/macro.njk" import govukInsetText %}
+{% from "casa/components/input/macro.njk" import casaGovukInput with context %}
 
 {% block journey_form %}
   <div class="govuk-width-container">
@@ -17,11 +18,20 @@
       text: formData.address
     }) }}
 
+    {{ casaGovukInput({
+      classes: "hidden",
+      value: formData.address,
+      name: "address"
+    }) }}
+
     <a href="/start">Go to start</a>
 
-    <a href='{{ waypointUrl({ waypoint: casa.waypoint, skipTo: "post-code-results" }) }}' class="govuk-link">
-      Use a different address 
-    </a>
+    {% if useDifferentAddress %}
+      <a href='{{ waypointUrl({ waypoint: casa.waypoint, skipTo: "post-code-results" }) }}' class="govuk-link">
+        Use a different address 
+      </a>
+    {% endif %}
+
     <a href='{{ waypointUrl({ waypoint: casa.waypoint, skipTo: "address-manual" }) }}' class="govuk-link">
       Enter the patient's address manually 
     </a>
