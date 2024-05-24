@@ -17,20 +17,6 @@ export const removeWaypointsFromJourneyContext = (req: Request, waypoints: strin
   (req as any).casa.journeyContext.setData(removedData);
 };
 
-// export const removeWaypointsFromJourneyContext = (req: Request, waypoints: string[], includeTempData?: boolean) => {
-//   const allData = (req as any).casa.journeyContext.getData();
-
-//   const filteredData = {};
-//   Object.entries(allData).forEach(([waypoint, value]) => {
-//     if(waypoints.includes(waypoint)) {
-//       return;
-//     }
-
-//     filteredData[waypoint] = value;
-//   });
-//   (req as any).casa.journeyContext.setData(filteredData);
-// };
-
 export const applySkipMeta = (req: Request, waypoint: string, skipto: string) => {
   console.log({ place: 'APPLYSKIPMETA', waypoint, skipto });
   (req as any).casa.journeyContext.setDataForPage('skippedTo', { __skipmeta__: skipto });
@@ -72,10 +58,6 @@ const prependUseCallback = async (req: Request, res: Response, next: NextFunctio
         removeWaypointsFromJourneyContext(req, waypointsToClear);
 
       }
-
-      if(edit) {
-        (req as any).casa.journeyContext.setDataForPage('edit', { edit: true });
-      }
     }
 
     if (waypoint === 'post-code-results') {
@@ -109,8 +91,8 @@ const prependUseCallback = async (req: Request, res: Response, next: NextFunctio
 
       if (skipto === 'post-code') {
         const waypointsToClear = [
-          'post-code', 'temp-post-code', 
-          'post-code-results', 'temp-post-code-results', 
+          'post-code', 'temp-post-code',
+          'post-code-results', 'temp-post-code-results',
           'address-confirmation', 'temp-address-confirmation',
           'address-manual', 'temp-manual-confirmation',
         ];
@@ -129,8 +111,8 @@ const prependUseCallback = async (req: Request, res: Response, next: NextFunctio
 
       if (skipto === 'address-manual') {
         const waypointsToClear = [
-          'post-code', 'temp-post-code', 
-          'post-code-results', 'temp-post-code-results', 
+          'post-code', 'temp-post-code',
+          'post-code-results', 'temp-post-code-results',
           'address-manual', 'temp-address-manual',
           'address-confirmation', 'temp-address-confirmation'
         ];
