@@ -45,15 +45,19 @@ plan.setRoute('address-confirmation', 'address-manual', (r, c) =>
   c.data['address-confirmation']?.__skipped__ &&
   c.data.skippedTo.__skipmeta__ === 'address-manual'
   && c.data.skippedFrom.__skipmeta__ === 'address-confirmation'
+  && !c.data.edit?.edit
 );
 plan.setRoute('address-confirmation', 'post-code', (r, c) =>
   c.data['address-confirmation']?.__skipped__ &&
   c.data.skippedTo.__skipmeta__ === 'post-code'
   && c.data.skippedFrom.__skipmeta__ === 'address-confirmation'
+  && !c.data.edit?.edit
 );
 plan.setRoute('address-confirmation', 'post-code-results', (r, c) =>
   c.data['address-confirmation']?.__skipped__ &&
   c.data.skippedTo.__skipmeta__ === 'post-code-results'
   && c.data.skippedFrom.__skipmeta__ === 'address-confirmation'
+  && !c.data.edit?.edit
 );
-plan.setRoute('address-confirmation', 'url:///start/', (r, c) => c.data['address-confirmation']?.__skipped__ !== true);
+plan.setRoute('address-confirmation', 'url:///start/', (r, c) => c.data['address-confirmation']?.__skipped__ !== true && !c.data.edit?.edit);
+plan.setRoute('address-confirmation', 'url:///check-your-answers/', (r, c) => c.data.edit?.edit === true);

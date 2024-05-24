@@ -7,6 +7,7 @@ import express, { Request, Response } from 'express';
 import { plan } from './plan';
 import { pages } from './pages';
 import { prepareJourneyMiddleware } from './utils';
+import { checkYourAnswers } from './check-your-answers';
 
 const addressApp = (
   name: string,
@@ -43,6 +44,11 @@ const addressApp = (
   ancillaryRouter.use('/start', (req: Request, res: Response) => {
     res.render('pages/start.njk');
   });
+
+  ancillaryRouter.use('/check-your-answers', (req: Request, res: Response) => {
+    checkYourAnswers(req, res);
+    res.render('pages/check-your-answers.njk');
+  })
 
   return mount(casaApp, {});
 }

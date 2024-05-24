@@ -53,9 +53,9 @@ const prependUseCallback = async (req: Request, res: Response, next: NextFunctio
   if (req.method === 'GET') {
     const tempData = (req as any).casa.journeyContext.getDataForPage(`temp-${waypoint}`);
     const skipto = req.query.skipto;
+    const edit = req.query.edit === 'true';
 
     const data = (req as any).casa.journeyContext.getDataForPage('temp-address-confirmation');
-    console.log({ place: 'POST /address-confirmation', data });
     (req as any).casa.journeyContext.setDataForPage('address-confirmation', data);
 
     if (tempData !== undefined) {
@@ -71,6 +71,10 @@ const prependUseCallback = async (req: Request, res: Response, next: NextFunctio
         console.log({ loc: 'HERE', waypointsToClear });
         removeWaypointsFromJourneyContext(req, waypointsToClear);
 
+      }
+
+      if(edit) {
+        (req as any).casa.journeyContext.setDataForPage('edit', { edit: true });
       }
     }
 
