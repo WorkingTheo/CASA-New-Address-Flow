@@ -51,7 +51,7 @@ export function patientDetailsSection(journeyContext: JourneyContext, res: Respo
       items: [
         {
           text: "Change your answer",
-          href: waypointUrl({ waypoint: 'post-code', edit: true, editOrigin: 'check-your-answers'})
+          href: "/edit-address"
         }
       ]
     }
