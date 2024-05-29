@@ -137,6 +137,7 @@ const prependUseCallback = async (req: Request, res: Response, next: NextFunctio
       const { addressLine1, postCode } = req.body;
       const address = `${addressLine1} - ${postCode}`;
       (req as any).casa.journeyContext.setDataForPage('temp-address-confirmation', { address });
+      (req as any).casa.journeyContext.setDataForPage('route', { route: 'manual' });
     }
     if (waypoint === 'post-code') {
       try {
@@ -146,9 +147,13 @@ const prependUseCallback = async (req: Request, res: Response, next: NextFunctio
         const addresses = results.data;
         console.log(addresses);
         (req as any).casa.journeyContext.setDataForPage(FOUND_ADDRESSES_DATA, { addresses });
+        (req as any).casa.journeyContext.setDataForPage('route', { route: 'automatic' });
       } catch (error) {
         console.log('failed to fetch data from address service');
       }
+    }
+    if(waypoint === 'address-confirmation') {
+      removeWaypointsFromJourneyContext(req, ['route']);
     }
 
     if (waypoint !== 'address-confirmation') {
