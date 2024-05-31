@@ -33,7 +33,6 @@ export const clearSkipMeta = (req: Request) => {
 }
 
 const prependUseCallback = async (req: Request, res: Response, next: NextFunction) => {
-  // try from request object 
   const waypoint = (req as any)._parsedUrl.pathname.replace('/', '');
 
   var toApplySkipMeta = true;
@@ -41,7 +40,6 @@ const prependUseCallback = async (req: Request, res: Response, next: NextFunctio
   if (req.method === 'GET') {
     const tempData = (req as any).casa.journeyContext.getDataForPage(`temp-${waypoint}`);
     const skipto = req.query.skipto;
-    const edit = req.query.edit === 'true';
 
     const data = (req as any).casa.journeyContext.getDataForPage('temp-address-confirmation');
     (req as any).casa.journeyContext.setDataForPage('address-confirmation', data);
