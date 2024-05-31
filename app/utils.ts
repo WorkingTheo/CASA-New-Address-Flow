@@ -4,6 +4,11 @@ import { NextFunction, Request, Response } from 'express';
 
 export const FOUND_ADDRESSES_DATA = 'found-addresses-data';
 
+export const setEditFlag = (req: Request, edit: boolean) => {
+  const journeyContext = JourneyContext.getDefaultContext(req.session);
+  journeyContext.setDataForPage('edit', { edit });
+}
+
 export const removeWaypointsFromJourneyContext = (req: Request, waypoints: string[], includeTempData?: boolean) => {
   const allData = (req as any).casa.journeyContext.getData();
   const allWaypoints = Object.keys(allData);
