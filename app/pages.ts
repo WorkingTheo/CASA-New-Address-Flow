@@ -44,6 +44,10 @@ export const pages = [
             res.locals.casa.journeyPreviousUrl = '/post-code-results';
           }
 
+          if((req as any).casa.journeyContext.getDataForPage('edit')?.edit === true) {
+            res.locals.casa.journeyPreviousUrl = '/check-your-answers';
+          }
+
           next();
         }
       }
