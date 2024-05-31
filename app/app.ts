@@ -1,8 +1,8 @@
 import path from 'path';
 import helmet from 'helmet';
 import { Store } from 'express-session';
+import { configure } from "@dwp/govuk-casa";
 import express, { Request, Response } from 'express';
-import { JourneyContext, configure } from "@dwp/govuk-casa";
 
 import { plan } from './plan';
 import { pages } from './pages';
