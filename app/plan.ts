@@ -6,8 +6,8 @@ export const plan = new Plan();
 plan.addSequence('name', 'surname');
 plan.addSkippables('post-code', 'post-code-results', 'address-not-found', 'address-manual', 'address-confirmation', 'url:///start/');
 
-plan.setRoute('surname', 'post-code', (r, c) => c.data['address-confirmation']?.address === undefined);
-plan.setRoute('surname', 'address-confirmation', (r, c) => c.data['address-confirmation']?.address !== undefined);
+plan.setRoute('surname', 'post-code', (r, c) => c.data['address-confirmation']?.address === undefined || c.data['route']?.route !== undefined);
+plan.setRoute('surname', 'address-confirmation', (r, c) => c.data['address-confirmation']?.address !== undefined && c.data['route']?.route === undefined);
 
 plan.setRoute('post-code', 'address-manual', (r, c) =>
   c.data['post-code']?.__skipped__ &&
@@ -32,9 +32,9 @@ plan.setRoute('post-code-results', 'address-manual', (r, c) =>
   c.data['post-code-results']?.__skipped__ &&
   c.data.skippedTo.__skipmeta__ === 'address-manual' &&
   c.data.skippedFrom.__skipmeta__ === 'post-code-results');
-plan.setRoute('post-code-results', 'address-confirmation', (r, c) => !c.data['post-code-results']?.__skipped__);
+plan.setRoute('post-code-results', 'address-confirmation', (r, c) => !c.data['post-code-results']?.__skipped__ && c.data['route']?.route === 'automatic');
 
-plan.setRoute('address-manual', 'address-confirmation', (r, c) => !c.data['address-manual']?.__skipped__);
+plan.setRoute('address-manual', 'address-confirmation', (r, c) => !c.data['address-manual']?.__skipped__ && c.data['route']?.route === 'manual');
 plan.setRoute('address-manual', 'post-code', (r, c) =>
   c.data['address-manual']?.__skipped__ &&
   c.data.skippedTo.__skipmeta__ === 'post-code' &&
