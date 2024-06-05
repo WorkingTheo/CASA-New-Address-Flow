@@ -1,12 +1,12 @@
 import path from 'path';
 import helmet from 'helmet';
 import { Store } from 'express-session';
-import { JourneyContext, configure } from "@dwp/govuk-casa";
+import { configure } from "@dwp/govuk-casa";
 import express, { Request, Response } from 'express';
 
 import { plan } from './plan';
 import { pages } from './pages';
-import { prepareJourneyMiddleware, removeWaypointsFromJourneyContext } from './utils';
+import { prepareJourneyMiddleware, setEditFlag } from './utils';
 import { checkYourAnswers } from './check-your-answers';
 
 const addressApp = (
@@ -51,12 +51,13 @@ const addressApp = (
   });
 
   ancillaryRouter.use('/edit-address', (req: Request, res: Response) => {
-    console.log('INSIDE EDIT-ADDRESS');
-    const journeyContext = JourneyContext.getDefaultContext(req.session);
-    journeyContext.setDataForPage('edit', { edit: true });
-
-    console.log('REDIRECtiNG TO POST-CODE');
+    setEditFlag(req, true);
     res.redirect('/address-confirmation');
+  });
+
+  ancillaryRouter.use('/cya', (req: Request, res: Response) => {
+    setEditFlag(req, false);
+    res.redirect('/check-your-answers');
   });
 
   return mount(casaApp, {});

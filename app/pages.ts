@@ -36,14 +36,6 @@ export const pages = [
       {
         hook: 'prerender',
         middleware: (req: Request, res: Response, next: NextFunction) => {
-          if (req.session.previousUrl === '/address-manual') {
-            res.locals.casa.journeyPreviousUrl = '/address-manual';
-          }
-
-          if (req.session.previousUrl === '/post-code-results') {
-            res.locals.casa.journeyPreviousUrl = '/post-code-results';
-          }
-
           if((req as any).casa.journeyContext.getDataForPage('edit')?.edit === true) {
             res.locals.casa.journeyPreviousUrl = '/check-your-answers';
           }

@@ -60,4 +60,4 @@ plan.setRoute('address-confirmation', 'post-code-results', (r, c) =>
   && !c.data.edit?.edit
 );
 plan.setRoute('address-confirmation', 'url:///start/', (r, c) => c.data['address-confirmation']?.__skipped__ !== true && !c.data.edit?.edit);
-plan.setRoute('address-confirmation', 'url:///check-your-answers/', (r, c) => c.data.edit?.edit === true);
+plan.setRoute('address-confirmation', 'url:///cya/', (r, c) => c.data.edit?.edit === true);
