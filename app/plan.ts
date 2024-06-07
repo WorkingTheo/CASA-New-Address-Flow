@@ -32,6 +32,10 @@ plan.setRoute('post-code-results', 'address-manual', (r, c) =>
   c.data['post-code-results']?.__skipped__ &&
   c.data.skippedTo.__skipmeta__ === 'address-manual' &&
   c.data.skippedFrom.__skipmeta__ === 'post-code-results');
+plan.setRoute('post-code-results', 'post-code', (r, c) =>
+  c.data['post-code-results']?.__skipped__ &&
+  c.data.skippedTo.__skipmeta__ === 'post-code' &&
+  c.data.skippedFrom.__skipmeta__ === 'post-code-results');
 plan.setRoute('post-code-results', 'address-confirmation', (r, c) => !c.data['post-code-results']?.__skipped__ && c.data['route']?.route === 'automatic');
 
 plan.setRoute('address-manual', 'address-confirmation', (r, c) => !c.data['address-manual']?.__skipped__ && c.data['route']?.route === 'manual');

@@ -71,6 +71,17 @@ const prependUseCallback = async (req: Request, res: Response, next: NextFunctio
         ];
         removeWaypointsFromJourneyContext(req, waypointsToClear);
       }
+
+      if (skipto === 'post-code') {
+        const waypointsToClear = [
+          'post-code', 'temp-post-code',
+          'post-code-results', 'temp-post-code-results',
+          'address-confirmation', 'temp-address-confirmation',
+          'address-manual', 'temp-manual-confirmation',
+        ];
+
+        removeWaypointsFromJourneyContext(req, waypointsToClear);
+      }
     }
 
     if (waypoint === 'address-confirmation') {
