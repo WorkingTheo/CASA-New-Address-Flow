@@ -129,6 +129,7 @@ const prependUseCallback = async (req: Request, res: Response, next: NextFunctio
     if (waypoint === 'post-code-results') {
       const address = req.body.address;
       (req as any).casa.journeyContext.setDataForPage('temp-address-confirmation', { address });
+      (req as any).casa.journeyContext.setDataForPage('route', { route: 'automatic' });
     }
     if (waypoint === 'address-manual') {
       const { addressLine1, postCode } = req.body;
