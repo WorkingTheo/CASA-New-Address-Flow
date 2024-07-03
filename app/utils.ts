@@ -130,6 +130,12 @@ const prependUseCallback = async (req: Request, res: Response, next: NextFunctio
       const address = req.body.address;
       (req as any).casa.journeyContext.setDataForPage('temp-address-confirmation', { address });
       (req as any).casa.journeyContext.setDataForPage('route', { route: 'automatic' });
+
+      if (!address) {
+        const { addresses } = (req as any).casa.journeyContext.getDataForPage(FOUND_ADDRESSES_DATA) as { addresses: string[] };
+        const addressOptions = addresses.map(address => ({ value: address, text: address }));
+        res.locals.addressOptions = addressOptions;
+      }
     }
     if (waypoint === 'address-manual') {
       const { addressLine1, postCode } = req.body;
@@ -148,7 +154,7 @@ const prependUseCallback = async (req: Request, res: Response, next: NextFunctio
         console.log('failed to fetch data from address service');
       }
     }
-    if(waypoint === 'address-confirmation') {
+    if (waypoint === 'address-confirmation') {
       removeWaypointsFromJourneyContext(req, ['route']);
     }
 
@@ -167,7 +173,7 @@ const prependUseCallback = async (req: Request, res: Response, next: NextFunctio
   JourneyContext.putContext(req.session, (req as any).casa.journeyContext);
   req.session.save(next);
 
-  //console.log((req as any).casa.journeyContext.getData());
+  console.log((req as any).casa.journeyContext.getData());
 };
 
 export const prepareJourneyMiddleware = (journeyRouter: MutableRouter) => {
